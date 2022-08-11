@@ -1,0 +1,3 @@
+The FIFA dataset contains HTTP request records for about 1.3 billion total requests to the FIFA World Cup Web Site from April 30 to July 26, 1998.
+Each log entry has a Unix timestamp in addition to detailed information such as the client ID, method, and status. 
+The dataset has been extensively utilized to evaluate autoscalers in the cloud computing literature
