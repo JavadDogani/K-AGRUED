@@ -1,0 +1,5 @@
+NASA's dataset was constructed using two traces containing all HTTP requests made to the NASA Kennedy Space Center's web server in Florida over two weeks. 
+The initial log was kept from 00:00:00 on July 1 to 23:59:59 on July 31, 1995, a period of 31 days. 
+The second log was kept for 31 days, from 00:00:00 August 1, 1995, to 23:59:59 August 31, 1995. There were 3,461,612 requests submitted during these two months. 
+Timestamps have a resolution of 1 minutes. 
+No accesses were registered between 01/Aug/1995 14:52:01 and 03/Aug/1995 04:36:13, as the Web server was shut down due to Hurricane Erin.
