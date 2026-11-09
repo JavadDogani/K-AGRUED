@@ -36,12 +36,22 @@ class AttentionGRUEncoderDecoder(nn.Module):
     """Input (B, lookback, n_features) -> output (B, horizon) of scaled load.
 
     Feature 0 of the input must be the (scaled) load: the decoder starts from the last observed
-    value and feeds its own predictions back in.
+    value and feeds its own predictions back in. With ``residual=True`` each decoder step predicts
+    the change from the previous value rather than the level itself.
     """
 
-    def __init__(self, n_features: int, horizon: int, hidden: int = 64, num_layers: int = 1, dropout: float = 0.0):
+    def __init__(
+        self,
+        n_features: int,
+        horizon: int,
+        hidden: int = 64,
+        num_layers: int = 1,
+        dropout: float = 0.0,
+        residual: bool = True,
+    ):
         super().__init__()
         self.horizon = horizon
+        self.residual = residual
         self.encoder = nn.GRU(
             n_features, hidden, num_layers=num_layers, batch_first=True, dropout=dropout if num_layers > 1 else 0.0
         )
@@ -57,7 +67,8 @@ class AttentionGRUEncoderDecoder(nn.Module):
         for _ in range(self.horizon):
             context, weights = self.attention(state, enc_states)
             state = self.decoder_cell(torch.cat([prev, context], dim=1), state)
-            prev = self.out(torch.cat([state, context], dim=1))
+            step = self.out(torch.cat([state, context], dim=1))
+            prev = prev + step if self.residual else step
             outputs.append(prev)
             attn.append(weights)
         y = torch.cat(outputs, dim=1)  # (B, horizon)

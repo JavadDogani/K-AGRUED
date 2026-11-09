@@ -1,7 +1,8 @@
 """Train and evaluate the attention-GRU encoder-decoder on a trace.
 
 Data handling: chronological 70/30 train/test split (as in the paper scripts), the last 10% of the
-training part held out for early stopping, and min-max scaling fitted on the training part only.
+training part held out for early stopping, and log1p + min-max scaling fitted on the training part
+only. The log keeps rare traffic peaks from squeezing normal load into a tiny part of the range.
 
 Usage:
     python -m kagrued.forecast --dataset fifa                    # writes results/fifa/t+{3,4,5}.csv
@@ -39,19 +40,25 @@ def calendar_features(index: pd.DatetimeIndex) -> np.ndarray:
 
 @dataclass
 class MinMax:
+    """Min-max scaling, optionally of log1p(x)."""
+
     lo: float
     hi: float
+    log: bool = True
 
     @classmethod
-    def fit(cls, x: np.ndarray) -> MinMax:
-        lo, hi = float(np.min(x)), float(np.max(x))
-        return cls(lo, hi if hi > lo else lo + 1.0)
+    def fit(cls, x: np.ndarray, log: bool = True) -> MinMax:
+        z = np.log1p(x) if log else np.asarray(x, dtype=float)
+        lo, hi = float(np.min(z)), float(np.max(z))
+        return cls(lo, hi if hi > lo else lo + 1.0, log)
 
     def transform(self, x):
-        return (x - self.lo) / (self.hi - self.lo)
+        z = np.log1p(x) if self.log else x
+        return (z - self.lo) / (self.hi - self.lo)
 
     def inverse(self, x):
-        return x * (self.hi - self.lo) + self.lo
+        z = x * (self.hi - self.lo) + self.lo
+        return np.expm1(z) if self.log else z
 
 
 def make_windows(features: np.ndarray, target: np.ndarray, lookback: int, horizon: int) -> tuple[np.ndarray, np.ndarray]:
@@ -76,11 +83,13 @@ class Split:
     scaler: MinMax
 
 
-def prepare(series: pd.Series, lookback: int, horizon: int, train_frac: float = 0.7, val_frac: float = 0.1) -> Split:
+def prepare(
+    series: pd.Series, lookback: int, horizon: int, train_frac: float = 0.7, val_frac: float = 0.1, log: bool = True
+) -> Split:
     """Scale with training statistics only, then build windows for each chronological split."""
     values = series.to_numpy(dtype=float)
     cut = int(train_frac * len(values))
-    scaler = MinMax.fit(values[:cut])
+    scaler = MinMax.fit(values[:cut], log=log)
     scaled = scaler.transform(values)
     feats = np.concatenate([scaled[:, None], calendar_features(pd.DatetimeIndex(series.index))], axis=1)
 
@@ -102,7 +111,7 @@ def train_model(
     epochs: int = 20,
     batch_size: int = 256,
     lr: float = 1e-3,
-    patience: int = 3,
+    patience: int = 5,
     seed: int = 0,
     verbose: bool = True,
 ) -> AttentionGRUEncoderDecoder:
@@ -165,16 +174,17 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--lookback", type=int, default=30, help="past minutes fed to the encoder")
     ap.add_argument("--horizon", type=int, default=5, help="future minutes predicted by the decoder")
     ap.add_argument("--hidden", type=int, default=64)
-    ap.add_argument("--epochs", type=int, default=20)
+    ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--no-log", action="store_true", help="min-max scale raw counts instead of log1p(counts)")
     ap.add_argument("--out-dir", type=Path, default=None, help="default: results/<dataset>")
     a = ap.parse_args(argv)
 
     ds = get_dataset(a.dataset)
     series = load_trace(ds.trace_path)
-    split = prepare(series, a.lookback, a.horizon)
+    split = prepare(series, a.lookback, a.horizon, log=not a.no_log)
     print(f"{ds.name}: {len(series)} minutes; windows train={len(split.X_train)} val={len(split.X_val)} test={len(split.X_test)}")
     model = train_model(split, a.horizon, hidden=a.hidden, epochs=a.epochs, batch_size=a.batch_size, lr=a.lr, seed=a.seed)
 

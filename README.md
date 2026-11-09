@@ -101,15 +101,23 @@ previous     2.447    3.822 12.167 13.355    1.932       2276         2289
 `kagrued/model.py` implements the model family described in the paper. A GRU encoder reads the last
 `lookback` minutes of load plus cyclical hour-of-day and day-of-week features. A GRU decoder then
 predicts the next `horizon` minutes one step at a time. At each step it attends over all encoder
-states with additive (Bahdanau) attention and feeds its own previous prediction back in.
+states with additive (Bahdanau) attention, predicts the change from its previous value, and feeds
+that prediction back in.
 
 This is a **re-implementation from the paper's description, not the code that produced the
-paper's numbers.** Layer sizes and training settings are defaults chosen here (hidden size 64,
-lookback 30, horizon 5, Adam, MSE loss, early stopping), so its errors are not the paper's. The
-paper's own predictions for every model are bundled in `*/t+{3,4,5}.csv`.
+paper's numbers.** Layer sizes and training settings are defaults chosen here: hidden size 64,
+lookback 30, horizon 5, Adam, MSE loss, up to 30 epochs with early stopping.
 
-Data handling: chronological 70/30 train/test split, the last 10% of the training part held out for
-early stopping, and min-max scaling fitted on the training part only.
+Data handling: chronological 70/30 train/test split, with the last 10% of the training part held
+out for early stopping. Values are scaled as `log1p(load)` followed by min-max scaling, both fitted
+on the training part only. Without the log, the World Cup peaks (up to 225k requests per minute)
+squeeze normal load into a tiny part of the range.
+
+**How it compares with the paper.** The bundled `t+k.csv` predictions cover 14–26 July 1998 (FIFA)
+and 18–30 August 1995 (NASA), and both periods lie inside this split's test part. On those same
+minutes, at t+3, the re-implementation reaches a MAPE of 12.6% on FIFA and 44.4% on NASA. The
+paper's K-AGRUED predictions reach 7.7% and 37.5%. To reproduce the paper's provisioning results,
+use the bundled predictions, as in the Quickstart.
 
 ## Original paper scripts
 
