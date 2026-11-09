@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+title: "K-AGRUED: proactive container autoscaling with an attention-based GRU encoder-decoder"
+type: software
+authors:
+  - family-names: Dogani
+    given-names: Javad
+version: 1.0.0
+license: MIT
+repository-code: "https://github.com/JavadDogani/K-AGRUED"
+keywords:
+  - kubernetes
+  - autoscaling
+  - workload-prediction
+  - gru
+  - attention-mechanism
+preferred-citation:
+  type: article
+  title: "K-AGRUED: A Container Autoscaling Technique for Cloud-based Web Applications in Kubernetes Using Attention-based GRU Encoder-Decoder"
+  authors:
+    - family-names: Dogani
+      given-names: Javad
+    - family-names: Khunjush
+      given-names: Farshad
+    - family-names: Seydali
+      given-names: Mehdi
+  journal: "Journal of Grid Computing"
+  volume: 20
+  start: 40
+  year: 2022
+  doi: "10.1007/s10723-022-09634-x"
