@@ -1,3 +1,5 @@
+# Baseline forecaster: a small Keras LSTM on calendar + lagged-load features.
+# Scalers are fitted on the training split only and reused for the test split.
 from __future__ import print_function
 import pandas as pd
 import random
@@ -16,7 +18,7 @@ def addColumns(data):
 
  
 
-def AGRUED(X_train,Y_train,X_test,Y_test,Epoch,featurenumber, scalar2,scalar4):
+def lstm_baseline(X_train,Y_train,X_test,Y_test,Epoch,featurenumber, scalar2,scalar4):
     x_train=X_train.copy()
     x_test=X_test.copy()
     y_train=Y_train.copy()
@@ -103,12 +105,12 @@ def run(data):
     
     x_train_normal = scaler1.fit_transform(train_x.values)
     y_train_normal = scaler2.fit_transform(train_y.values.reshape(-1,1))
-    x_test_normal = scaler3.fit_transform(test_x.values)
-    y_test_normal = scaler4.fit_transform(test_y.values.reshape(-1,1))
+    x_test_normal = scaler1.transform(test_x.values)
+    y_test_normal = scaler2.transform(test_y.values.reshape(-1,1))
     
     
     featurenumber=train_x.shape[1]
-    MAPE_train,MAPE_test,pred_train,pred_test=AGRUED(x_train_normal,y_train_normal,x_test_normal,y_test_normal,Iteration,featurenumber,scaler2,scaler4)
+    MAPE_train,MAPE_test,pred_train,pred_test=lstm_baseline(x_train_normal,y_train_normal,x_test_normal,y_test_normal,Iteration,featurenumber,scaler2,scaler2)
     
     Result_MAPE=MAPE(pred_test,test_y.values)
     

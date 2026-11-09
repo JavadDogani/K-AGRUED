@@ -233,7 +233,7 @@ def TO(pt,rt):
     return sum/len(rt)*100
     
 
-lbl=['GRUED','SVR' , 'ARIMA', 'LSTM', 'GRUED']
+lbl=['K-AGRUED','GRUED' , 'ARIMA', 'LSTM']  # the first entry drives the proactive policy
 
 for j in lbl[0:1]:
     Provisioning = np.array([])

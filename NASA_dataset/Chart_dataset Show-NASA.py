@@ -10,11 +10,11 @@ import pandas as pd
 import matplotlib.dates as mdates
 import random
 
-d1=pd.read_csv("nasa.csv")
+d1=pd.read_csv("NASA_Results.csv")
 data=d1
 x=data['period']
 y=data['count'][:data.shape[0]]
-date_time_str1 = x[0]
+date_time_str1 = pd.to_datetime(x[0]).strftime('%Y-%m-%d %H:%M:%S')
 now = datetime.datetime.strptime(date_time_str1, '%Y-%m-%d %H:%M:%S')
 
 date_time_str2 = '1995-07-28 13:32:00'
